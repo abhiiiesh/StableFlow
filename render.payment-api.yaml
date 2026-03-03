@@ -12,6 +12,7 @@ services:
   - type: web
     name: stableflow-payment-api
     runtime: python
+    pythonVersion: "3.11.8"
     region: oregon              # change to: frankfurt | singapore | ohio
     plan: free                  # upgrade to starter ($7/mo) for always-on
     rootDir: .                  # repo root (or subfolder if monorepo)
