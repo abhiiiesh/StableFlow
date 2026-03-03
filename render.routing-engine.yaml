@@ -10,6 +10,7 @@ services:
   - type: web
     name: stableflow-routing-engine
     runtime: python
+    pythonVersion: "3.11.8"
     region: oregon
     plan: free
     rootDir: .
