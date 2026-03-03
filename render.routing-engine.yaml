@@ -1,0 +1,29 @@
+##############################################################################
+# StableFlow — AI Routing Engine Service
+# Deploy this file from: /services/routing-engine/
+#
+# This service is stateless (no DB needed) — the rule engine holds
+# no mutable state. Claude API is only called for explanations.
+##############################################################################
+
+services:
+  - type: web
+    name: stableflow-routing-engine
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: .
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn routing_main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+
+    envVars:
+      # ── AI explanation layer (optional — falls back to template if missing) ─
+      - key: ANTHROPIC_API_KEY
+        sync: false
+
+      - key: SERVICE_NAME
+        value: stableflow-routing-engine
+
+      - key: SECRET_KEY
+        generateValue: true

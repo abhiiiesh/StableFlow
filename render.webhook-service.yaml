@@ -1,0 +1,33 @@
+##############################################################################
+# StableFlow — Webhook Service
+# Handles outbound HMAC-signed webhook delivery to merchant endpoints.
+# Shares the same DB as the Payment API to read merchant webhook URLs.
+##############################################################################
+
+services:
+  - type: web
+    name: stableflow-webhook-service
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: .
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn webhook_main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: stableflow-db      # same DB as payment-api
+          property: connectionString
+
+      - key: WEBHOOK_SECRET
+        sync: false                # must match the value set in payment-api service
+
+      - key: SECRET_KEY
+        generateValue: true
+
+      - key: SERVICE_NAME
+        value: stableflow-webhook-service
+
+# No new database block here — reuses stableflow-db from payment-api service

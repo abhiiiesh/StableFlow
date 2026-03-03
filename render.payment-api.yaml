@@ -1,0 +1,62 @@
+##############################################################################
+# StableFlow — Payment API Service
+# Deploy this file from: /services/payment-api/
+#
+# Render will:
+#   1. Provision a free PostgreSQL database (stableflow-db)
+#   2. Deploy the FastAPI app and inject DATABASE_URL automatically
+#   3. Run the health check at /health
+##############################################################################
+
+services:
+  - type: web
+    name: stableflow-payment-api
+    runtime: python
+    region: oregon              # change to: frankfurt | singapore | ohio
+    plan: free                  # upgrade to starter ($7/mo) for always-on
+    rootDir: .                  # repo root (or subfolder if monorepo)
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+
+    envVars:
+      # ── Injected automatically by Render when DB is attached ──────────────
+      - key: DATABASE_URL
+        fromDatabase:
+          name: stableflow-db
+          property: connectionString
+
+      # ── Set these manually in Render Dashboard → Environment ─────────────
+      - key: BNB_RPC_URL
+        value: https://bsc-dataseed.binance.org/
+
+      - key: MERCHANT_WALLET_ADDRESS
+        sync: false             # prompts you to enter value in dashboard
+
+      - key: MERCHANT_PRIVATE_KEY
+        sync: false             # sensitive — enter in dashboard, never commit
+
+      - key: SECRET_KEY
+        generateValue: true     # Render auto-generates a secure random string
+
+      - key: WEBHOOK_SECRET
+        generateValue: true
+
+      - key: ANTHROPIC_API_KEY
+        sync: false             # enter in dashboard
+
+      - key: SERVICE_NAME
+        value: stableflow-payment-api
+
+      # BEP-20 contract addresses (BNB Chain Mainnet — do not change)
+      - key: USDT_CONTRACT
+        value: "0x55d398326f99059fF775485246999027B3197955"
+      - key: USDC_CONTRACT
+        value: "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d"
+
+databases:
+  - name: stableflow-db
+    databaseName: stableflow
+    user: stableflow
+    plan: free                  # 1GB storage, 90-day free tier on Render
+    region: oregon              # must match service region above

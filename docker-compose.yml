@@ -1,0 +1,60 @@
+version: "3.9"
+
+services:
+
+  # ── StableFlow API ──────────────────────────────────────────────────────────
+  api:
+    build: .
+    container_name: stableflow-api
+    ports:
+      - "8000:8000"
+    environment:
+      # BNB Chain
+      - BNB_RPC_URL=${BNB_RPC_URL:-https://bsc-dataseed.binance.org/}
+      - MERCHANT_WALLET_ADDRESS=${MERCHANT_WALLET_ADDRESS:-0x0000000000000000000000000000000000000000}
+      - MERCHANT_PRIVATE_KEY=${MERCHANT_PRIVATE_KEY:-}
+      - USDT_CONTRACT=0x55d398326f99059fF775485246999027B3197955
+      - USDC_CONTRACT=0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d
+      # App
+      - SECRET_KEY=${SECRET_KEY:-dev-secret}
+      - WEBHOOK_SECRET=${WEBHOOK_SECRET:-webhook-dev-secret}
+      - DATABASE_URL=sqlite+aiosqlite:///./stableflow.db
+      # AI
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+    volumes:
+      - .:/app                       # hot reload in dev
+      - stableflow-db:/app/data      # persist SQLite
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - stableflow-net
+
+  # ── Redis (rate limiting & caching — optional, uncomment for production) ─────
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: stableflow-redis
+  #   ports:
+  #     - "6379:6379"
+  #   networks:
+  #     - stableflow-net
+
+  # ── Webhook Test Receiver ─────────────────────────────────────────────────
+  # A simple echo server to test webhook delivery during development
+  webhook-tester:
+    image: mendhak/http-https-echo:latest
+    container_name: stableflow-webhook-tester
+    ports:
+      - "9000:8080"
+    networks:
+      - stableflow-net
+
+volumes:
+  stableflow-db:
+
+networks:
+  stableflow-net:
+    driver: bridge
